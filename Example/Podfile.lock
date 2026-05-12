@@ -1,0 +1,24 @@
+PODS:
+  - Alamofire (5.10.2)
+  - AlamofireObjc (1.0.0):
+    - Alamofire
+
+DEPENDENCIES:
+  - Alamofire
+  - AlamofireObjc (from `../`)
+
+SPEC REPOS:
+  https://mirrors.tuna.tsinghua.edu.cn/git/CocoaPods/Specs.git:
+    - Alamofire
+
+EXTERNAL SOURCES:
+  AlamofireObjc:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  Alamofire: 7193b3b92c74a07f85569e1a6c4f4237291e7496
+  AlamofireObjc: 48a99b18494d3e128a029be79ee8c4de8879376f
+
+PODFILE CHECKSUM: 0f7c510c31ac2766116369c0d2749f804d68c4a9
+
+COCOAPODS: 1.16.2

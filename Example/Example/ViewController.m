@@ -1,22 +1,27 @@
-# AlamofireObjc
+//
+//  ViewController.m
+//  Example
+//
+//  Created by XUZY on 2022/10/24.
+//
 
-
-# AlamofireObjc
-
-## 介绍
-Alamofire的Objc桥接，支持swift5
-
-## 如何导入
-```
-pod 'HXSelectTool', :git => 'https://github.com/xuzeyu/HXSelectTool.git'
-```
-
-## 如何使用
-```
+#import "ViewController.h"
 @import AlamofireObjc;
 
-   // GET 请求示例
-    [[AlamofireObjc shared] get:@"https://xxx.com/get"
+@interface ViewController ()
+
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    [self test];
+}
+
+- (void)test {
+    // GET 请求示例
+    [[AlamofireObjc shared] get:@"https://httpbin.org/get"
                      parameters:nil
                         headers:nil
                         success:^(NSData * _Nullable data) {
@@ -26,7 +31,7 @@ pod 'HXSelectTool', :git => 'https://github.com/xuzeyu/HXSelectTool.git'
     }];
     
     // POST 请求示例
-    [[AlamofireObjc shared] post:@"https://xxx.com/post"
+    [[AlamofireObjc shared] post:@"https://httpbin.org/post"
                       parameters:@{@"key": @"value"}
                          headers:nil
                          success:^(NSData * _Nullable data) {
@@ -34,5 +39,6 @@ pod 'HXSelectTool', :git => 'https://github.com/xuzeyu/HXSelectTool.git'
     } failure:^(NSError * _Nonnull error) {
         NSLog(@"POST failure: %@", error);
     }];
+}
 
-```
+@end
