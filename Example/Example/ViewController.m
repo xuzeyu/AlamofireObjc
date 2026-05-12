@@ -6,7 +6,7 @@
 //
 
 #import "ViewController.h"
-@import AlamofireObjc;
+#import "AlamofireObjc-Swift.h"
 
 @interface ViewController ()
 

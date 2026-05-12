@@ -13,7 +13,7 @@ pod 'HXSelectTool', :git => 'https://github.com/xuzeyu/HXSelectTool.git'
 
 ## 如何使用
 ```
-@import AlamofireObjc;
+#import "AlamofireObjc-Swift.h"
 
    // GET 请求示例
     [[AlamofireObjc shared] get:@"https://xxx.com/get"
