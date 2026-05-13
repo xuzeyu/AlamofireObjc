@@ -16,6 +16,50 @@ import Alamofire
     case reachableViaWiFi = 2
 }
 
+/// Completion handler typealias with named parameter for ObjC autocomplete
+public typealias AFResponseCompletion = (_ response: AFResponseModel) -> Void
+
+/// Unified response model for all network requests
+@objcMembers
+public class AFResponseModel: NSObject {
+    /// Response data on success
+    public var data: Data?
+    /// Error info on failure
+    public var error: Error?
+    /// Whether request succeeded (error == nil)
+    public var isSuccess: Bool { return error == nil }
+    /// The network request that can be cancelled
+    public private(set) var networkRequest: AFNetworkRequest?
+
+    /// Lazily parsed JSON object (NSDictionary or NSArray), equivalent to AFNetworking's responseJSONObject
+    /// Returns nil if data is nil or JSON parsing fails
+    public var jsonObj: Any? {
+        if let cached = _jsonObj { return cached }
+        guard let data = data else { return nil }
+        let parsed = try? JSONSerialization.jsonObject(with: data, options: [.mutableContainers])
+        _jsonObj = parsed
+        return parsed
+    }
+    private var _jsonObj: Any?
+
+    /// Returns raw data as UTF-8 string
+    public var jsonString: String? {
+        guard let data = data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Convenience: returns json as NSDictionary (nil if not a dictionary)
+    public var jsonDictionary: NSDictionary? {
+        return jsonObj as? NSDictionary
+    }
+
+    init(data: Data? = nil, error: Error? = nil, networkRequest: AFNetworkRequest? = nil) {
+        self.data = data
+        self.error = error
+        self.networkRequest = networkRequest
+    }
+}
+
 /// Wrapper around Alamofire Request for ObjC cancel support
 /// Since Alamofire creates URLSessionTask asynchronously, request.task is nil
 /// immediately after session.request(). Use this wrapper to cancel via Request.cancel() directly.
@@ -103,8 +147,7 @@ public class AlamofireObjc: NSObject {
     public func post(_ urlString: String,
               bodyData: Data,
               headers: [String: String]?,
-              success: @escaping (Data?) -> Void,
-              failure: @escaping (Error) -> Void) -> AFNetworkRequest {
+              completion: @escaping AFResponseCompletion) -> AFNetworkRequest {
         
         var httpHeaders: HTTPHeaders?
         if let h = headers, !h.isEmpty {
@@ -115,10 +158,10 @@ public class AlamofireObjc: NSObject {
         do {
             urlRequest = try URLRequest(url: urlString, method: .post, headers: httpHeaders)
         } catch {
-            failure(error)
-            // Return a placeholder request that does nothing on cancel
             let dummyRequest = session.request(URLRequest(url: URL(string: "about:blank")!))
-            return AFNetworkRequest(request: dummyRequest, manager: self)
+            let networkRequest = AFNetworkRequest(request: dummyRequest, manager: self)
+            completion(AFResponseModel(error: error, networkRequest: networkRequest))
+            return networkRequest
         }
         urlRequest.httpBody = bodyData
         urlRequest.setValue("text/plain", forHTTPHeaderField: "Content-Type")
@@ -130,10 +173,10 @@ public class AlamofireObjc: NSObject {
             self?.untrackRequest(networkRequest)
             switch response.result {
             case .success(let data):
-                success(data)
+                completion(AFResponseModel(data: data, networkRequest: networkRequest))
             case .failure(let error):
                 if !error.isExplicitlyCancelledError {
-                    failure(error)
+                    completion(AFResponseModel(error: error, networkRequest: networkRequest))
                 }
             }
         }
@@ -147,8 +190,7 @@ public class AlamofireObjc: NSObject {
     public func post(_ urlString: String,
               bodyString: String,
               headers: [String: String]?,
-              success: @escaping (Data?) -> Void,
-              failure: @escaping (Error) -> Void) -> AFNetworkRequest {
+              completion: @escaping AFResponseCompletion) -> AFNetworkRequest {
         
         var httpHeaders: HTTPHeaders?
         if let h = headers, !h.isEmpty {
@@ -159,9 +201,10 @@ public class AlamofireObjc: NSObject {
         do {
             urlRequest = try URLRequest(url: urlString, method: .post, headers: httpHeaders)
         } catch {
-            failure(error)
             let dummyRequest = session.request(URLRequest(url: URL(string: "about:blank")!))
-            return AFNetworkRequest(request: dummyRequest, manager: self)
+            let networkRequest = AFNetworkRequest(request: dummyRequest, manager: self)
+            completion(AFResponseModel(error: error, networkRequest: networkRequest))
+            return networkRequest
         }
         urlRequest.httpBody = bodyString.data(using: .utf8)
         urlRequest.setValue("text/plain", forHTTPHeaderField: "Content-Type")
@@ -173,10 +216,10 @@ public class AlamofireObjc: NSObject {
             self?.untrackRequest(networkRequest)
             switch response.result {
             case .success(let data):
-                success(data)
+                completion(AFResponseModel(data: data, networkRequest: networkRequest))
             case .failure(let error):
                 if !error.isExplicitlyCancelledError {
-                    failure(error)
+                    completion(AFResponseModel(error: error, networkRequest: networkRequest))
                 }
             }
         }
@@ -190,8 +233,7 @@ public class AlamofireObjc: NSObject {
     public func post(_ urlString: String,
               parameters: [String: Any]?,
               headers: [String: String]?,
-              success: @escaping (Data?) -> Void,
-              failure: @escaping (Error) -> Void) -> AFNetworkRequest {
+              completion: @escaping AFResponseCompletion) -> AFNetworkRequest {
         
         var httpHeaders: HTTPHeaders?
         if let h = headers, !h.isEmpty {
@@ -205,10 +247,10 @@ public class AlamofireObjc: NSObject {
             self?.untrackRequest(networkRequest)
             switch response.result {
             case .success(let data):
-                success(data)
+                completion(AFResponseModel(data: data, networkRequest: networkRequest))
             case .failure(let error):
                 if !error.isExplicitlyCancelledError {
-                    failure(error)
+                    completion(AFResponseModel(error: error, networkRequest: networkRequest))
                 }
             }
         }
@@ -222,8 +264,7 @@ public class AlamofireObjc: NSObject {
     public func get(_ urlString: String,
              parameters: [String: Any]?,
              headers: [String: String]?,
-             success: @escaping (Data?) -> Void,
-             failure: @escaping (Error) -> Void) -> AFNetworkRequest {
+             completion: @escaping AFResponseCompletion) -> AFNetworkRequest {
         
         var httpHeaders: HTTPHeaders?
         if let h = headers, !h.isEmpty {
@@ -237,10 +278,10 @@ public class AlamofireObjc: NSObject {
             self?.untrackRequest(networkRequest)
             switch response.result {
             case .success(let data):
-                success(data)
+                completion(AFResponseModel(data: data, networkRequest: networkRequest))
             case .failure(let error):
                 if !error.isExplicitlyCancelledError {
-                    failure(error)
+                    completion(AFResponseModel(error: error, networkRequest: networkRequest))
                 }
             }
         }
